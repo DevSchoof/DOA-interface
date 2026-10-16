@@ -69,7 +69,7 @@ docs/            # documentação e contrato da API
 Pré-requisito: [Flutter SDK](https://docs.flutter.dev/get-started/install) instalado.
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
+git clone https://github.com/DevSchoof/DOA-interface
 cd doa_interface
 flutter pub get
 flutter run -d chrome
