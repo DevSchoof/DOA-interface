@@ -8,7 +8,7 @@ Projeto da disciplina *Projeto de Tecnologia da Informação e Comunicação*, d
 
 O Brasil convive com insegurança alimentar e, ao mesmo tempo, com grande desperdício de alimentos. O Dôa é uma plataforma de intermediação que conecta **doadores** (pessoas físicas e empresas) a **instituições receptoras** (ONGs e grupos comunitários), com controle de ofertas, geolocalização, notificações e medição de impacto social.
 
-Este repositório contém o **aplicativo (front-end) em Flutter**. O **back-end (API em Java)** fica em outro repositório: [doa-api](URL_DO_REPOSITORIO_DO_BACK). O contrato entre os dois está em [`docs/API.md`](docs/API.md).
+Este repositório contém o **aplicativo (front-end) em Flutter**. O **back-end (API em Java)** é desenvolvido em repositório separado. O contrato entre os dois está em [`docs/API.md`](docs/API.md).
 
 > Decisão posterior à declaração de escopo: o front-end passou de PWA em React para Flutter, e o back-end será desenvolvido em Java.
 
@@ -33,11 +33,15 @@ O projeto segue Scrum, com 8 sprints de 2 semanas (16 semanas), 26 user stories 
 | 3. Logística | 5 e 6 | Mapa, filtro por raio e notificações (Beta) |
 | 4. Entrega | 7 e 8 | Chat, dashboard, relatórios (Release 1.0) |
 
-A documentação (escopo, backlog, planejamento das sprints e contrato da API) está na pasta [`docs/`](docs/).
+O contrato da API está em [`docs/API.md`](docs/API.md).
 
 ## Status
 
-Em desenvolvimento: **Sprint 1** (autenticação e cadastro de doadores).
+Em desenvolvimento: **Sprint 1** (autenticação e cadastros), concluída no front-end.
+
+- [x] Login e logout (PB-001 e PB-002)
+- [x] Cadastro de usuário pelo administrador (PB-003)
+- [x] Cadastro de doador PF/PJ (PB-004)
 
 Enquanto a API em Java não está integrada, o app usa serviços simulados (mock) em `lib/services/`, que serão trocados pela API real sem alterar as telas.
 
@@ -58,10 +62,16 @@ Enquanto a API em Java não está integrada, o app usa serviços simulados (mock
 
 ```
 lib/
-├── models/      # modelos de dados e enums
+├── main.dart    # inicialização e injeção dos serviços
+├── router.dart  # rotas e controle de acesso por perfil
+├── models/      # modelos de dados
 │   └── enums/
-└── services/    # interfaces dos serviços e implementações mock
-docs/            # documentação e contrato da API
+├── providers/   # estado da aplicação (sessão)
+├── screens/     # telas
+├── services/    # interfaces dos serviços e implementações mock
+└── utils/       # utilitários (validação de CPF e CNPJ)
+test/            # testes automatizados
+docs/            # contrato da API
 ```
 
 ## Como executar
@@ -70,7 +80,7 @@ Pré-requisito: [Flutter SDK](https://docs.flutter.dev/get-started/install) inst
 
 ```bash
 git clone https://github.com/DevSchoof/DOA-interface
-cd doa_interface
+cd doa-interface
 flutter pub get
 flutter run -d chrome
 ```

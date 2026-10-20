@@ -4,6 +4,7 @@ import 'models/models.dart';
 import 'providers/auth_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_donor_screen.dart';
 import 'screens/register_user_screen.dart';
 
 GoRouter createRouter(AuthProvider auth) => GoRouter(
@@ -20,6 +21,12 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
     if (location == '/users/new' && auth.user?.role != UserRole.admin) {
       return '/home';
     }
+
+    // Cadastro de doador só para o perfil Doador.
+    if (location == '/donors/new' && auth.user?.role != UserRole.donor) {
+      return '/home';
+    }
+
     return null;
   },
   routes: [
@@ -28,6 +35,10 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
     GoRoute(
       path: '/users/new',
       builder: (context, state) => const RegisterUserScreen(),
+    ),
+    GoRoute(
+      path: '/donors/new',
+      builder: (context, state) => const RegisterDonorScreen(),
     ),
   ],
 );
