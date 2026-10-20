@@ -37,6 +37,14 @@ class HomeScreen extends StatelessWidget {
                 label: const Text('Cadastrar usuário'),
               ),
             ],
+            if (user?.role == UserRole.donor) ...[
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () => context.push('/donors/new'),
+                icon: const Icon(Icons.volunteer_activism),
+                label: const Text('Cadastrar dados de doador'),
+              ),
+            ],
           ],
         ),
       ),

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'router.dart';
 import 'services/auth_service.dart';
+import 'services/donor_service.dart';
+import 'services/mock_donor_service.dart';
 import 'services/mock_auth_service.dart';
 import 'services/session_storage.dart';
 
@@ -19,6 +21,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         Provider<AuthService>.value(value: authService),
+        Provider<DonorService>.value(value: MockDonorService()),
         ChangeNotifierProvider<AuthProvider>.value(value: auth),
       ],
       child: const DoaApp(),
