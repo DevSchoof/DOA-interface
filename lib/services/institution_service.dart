@@ -16,4 +16,10 @@ abstract class InstitutionService {
 
   /// Instituição do usuário, ou null se ainda não se cadastrou.
   Future<Institution?> findByUserId(String userId);
+
+  /// PB-007 (admin): lista instituições, opcionalmente filtrando por status.
+  Future<List<Institution>> listByStatus(InstitutionStatus? status);
+
+  /// PB-007 (admin): aprova ou rejeita uma instituição pendente.
+  Future<Institution> updateStatus(String id, InstitutionStatus status);
 }

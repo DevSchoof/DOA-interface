@@ -37,6 +37,12 @@ class HomeScreen extends StatelessWidget {
                 icon: const Icon(Icons.person_add),
                 label: const Text('Cadastrar usuário'),
               ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () => context.push('/admin/institutions'),
+                icon: const Icon(Icons.fact_check),
+                label: const Text('Homologar instituições'),
+              ),
             ],
             if (user?.role == UserRole.donor) ...[
               const SizedBox(height: 24),
