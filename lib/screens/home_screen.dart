@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../models/models.dart';
 import '../providers/auth_provider.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -22,7 +24,21 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: Center(
-        child: Text('Olá, ${user?.email}\nPerfil: ${user?.role.name}'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Olá, ${user?.email}'),
+            Text('Perfil: ${user?.role.label}'),
+            if (user?.role == UserRole.admin) ...[
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () => context.push('/users/new'),
+                icon: const Icon(Icons.person_add),
+                label: const Text('Cadastrar usuário'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

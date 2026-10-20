@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
 import 'router.dart';
+import 'services/auth_service.dart';
 import 'services/mock_auth_service.dart';
 import 'services/session_storage.dart';
 
@@ -10,10 +11,19 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Troque MockAuthService pela implementação HTTP quando a API existir.
-  final auth = AuthProvider(MockAuthService(), const SessionStorage());
+  final AuthService authService = MockAuthService();
+  final auth = AuthProvider(authService, const SessionStorage());
   await auth.restoreSession();
 
-  runApp(ChangeNotifierProvider.value(value: auth, child: const DoaApp()));
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<AuthService>.value(value: authService),
+        ChangeNotifierProvider<AuthProvider>.value(value: auth),
+      ],
+      child: const DoaApp(),
+    ),
+  );
 }
 
 class DoaApp extends StatefulWidget {
