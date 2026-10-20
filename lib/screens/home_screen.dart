@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
+import '../providers/institution_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -45,6 +46,61 @@ class HomeScreen extends StatelessWidget {
                 label: const Text('Cadastrar dados de doador'),
               ),
             ],
+            if (user?.role == UserRole.institution) ...[
+              const SizedBox(height: 24),
+              _InstitutionSection(userId: user!.id),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Mostra o botão de cadastro ou, se já cadastrada, o status da instituição.
+class _InstitutionSection extends StatefulWidget {
+  const _InstitutionSection({required this.userId});
+
+  final String userId;
+
+  @override
+  State<_InstitutionSection> createState() => _InstitutionSectionState();
+}
+
+class _InstitutionSectionState extends State<_InstitutionSection> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<InstitutionProvider>().load(widget.userId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<InstitutionProvider>();
+    final institution = provider.institution;
+
+    if (institution == null) {
+      if (provider.isLoading) return const CircularProgressIndicator();
+      return FilledButton.icon(
+        onPressed: () => context.push('/institutions/new'),
+        icon: const Icon(Icons.apartment),
+        label: const Text('Cadastrar instituição'),
+      );
+    }
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              institution.name,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Chip(label: Text('Status: ${institution.status.label}')),
           ],
         ),
       ),

@@ -5,6 +5,7 @@ import 'providers/auth_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_donor_screen.dart';
+import 'screens/register_institution_screen.dart';
 import 'screens/register_user_screen.dart';
 
 GoRouter createRouter(AuthProvider auth) => GoRouter(
@@ -27,6 +28,12 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
       return '/home';
     }
 
+    // Cadastro de instituição só para o perfil Instituição.
+    if (location == '/institutions/new' &&
+        auth.user?.role != UserRole.institution) {
+      return '/home';
+    }
+
     return null;
   },
   routes: [
@@ -39,6 +46,10 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
     GoRoute(
       path: '/donors/new',
       builder: (context, state) => const RegisterDonorScreen(),
+    ),
+    GoRoute(
+      path: '/institutions/new',
+      builder: (context, state) => const RegisterInstitutionScreen(),
     ),
   ],
 );
