@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'models/models.dart';
 import 'providers/auth_provider.dart';
 import 'screens/home_screen.dart';
+import 'screens/institution_approval_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_donor_screen.dart';
 import 'screens/register_institution_screen.dart';
@@ -34,6 +35,12 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
       return '/home';
     }
 
+    // Homologação de instituições só para administrador.
+    if (location == '/admin/institutions' &&
+        auth.user?.role != UserRole.admin) {
+      return '/home';
+    }
+
     return null;
   },
   routes: [
@@ -50,6 +57,10 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
     GoRoute(
       path: '/institutions/new',
       builder: (context, state) => const RegisterInstitutionScreen(),
+    ),
+    GoRoute(
+      path: '/admin/institutions',
+      builder: (context, state) => const InstitutionApprovalScreen(),
     ),
   ],
 );

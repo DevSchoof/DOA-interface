@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
-import '../services/auth_service.dart';
 import '../providers/institution_provider.dart';
+import '../services/auth_service.dart';
 import '../utils/document_validator.dart';
 
 class RegisterInstitutionScreen extends StatefulWidget {
@@ -172,8 +172,9 @@ class _RegisterInstitutionScreenState extends State<RegisterInstitutionScreen> {
                     validator: (v) {
                       final n = _parseCapacity(v);
                       if (n == null) return 'Informe um número.';
-                      if (n <= 0)
+                      if (n <= 0) {
                         return 'A capacidade deve ser maior que zero.';
+                      }
                       return null;
                     },
                   ),
