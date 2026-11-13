@@ -1,106 +1,125 @@
-# Dôa
+# Dôa — plataforma de doação de alimentos
 
-**Plataforma Digital de Combate à Fome e ao Desperdício de Alimentos**
+Conecta **doadores** (mercados, restaurantes, pessoas) a **instituições** que recebem alimentos, evitando desperdício.
 
-Projeto da disciplina *Projeto de Tecnologia da Informação e Comunicação*, do curso de Tecnologia em Análise e Desenvolvimento de Sistemas.
-
-## Sobre o projeto
-
-O Brasil convive com insegurança alimentar e, ao mesmo tempo, com grande desperdício de alimentos. O Dôa é uma plataforma de intermediação que conecta **doadores** (pessoas físicas e empresas) a **instituições receptoras** (ONGs e grupos comunitários), com controle de ofertas, geolocalização, notificações e medição de impacto social.
-
-Este repositório contém o **aplicativo (front-end) em Flutter**. O **back-end (API em Java)** é desenvolvido em repositório separado. O contrato entre os dois está em [`docs/API.md`](docs/API.md).
-
-> Decisão posterior à declaração de escopo: o front-end passou de PWA em React para Flutter, e o back-end será desenvolvido em Java.
-
-## Módulos
-
-1. **Autenticação e Segurança:** login, logout, cadastro de usuários e controle de acesso por perfil (Doador, Instituição e Administrador).
-2. **Gestão de Doadores:** cadastro de pessoa física ou jurídica.
-3. **Gestão de Instituições:** cadastro, homologação pelo administrador e listagem.
-4. **Ofertas e Reservas:** publicação, reserva, confirmação de coleta e cancelamento.
-5. **Logística e Mapa:** ofertas geolocalizadas, filtro por raio e rota sugerida.
-6. **Notificações e Comunicação:** alertas, notificações push e chat.
-7. **Relatórios e Impacto Social:** dashboard de impacto, relatórios e painel administrativo.
-
-## Planejamento
-
-O projeto segue Scrum, com 8 sprints de 2 semanas (16 semanas), 26 user stories e 140 story points.
-
-| Fase | Sprints | Entrega |
-|---|---|---|
-| 1. Fundação | 1 e 2 | Autenticação, doadores e instituições |
-| 2. MVP | 3 e 4 | Ciclo completo de doação |
-| 3. Logística | 5 e 6 | Mapa, filtro por raio e notificações (Beta) |
-| 4. Entrega | 7 e 8 | Chat, dashboard, relatórios (Release 1.0) |
-
-O contrato da API está em [`docs/API.md`](docs/API.md).
-
-## Status
-
-Em desenvolvimento: **Sprint 1** (autenticação e cadastros), concluída no front-end.
-
-- [x] Login e logout (PB-001 e PB-002)
-- [x] Cadastro de usuário pelo administrador (PB-003)
-- [x] Cadastro de doador PF/PJ (PB-004)
-
-Enquanto a API em Java não está integrada, o app usa serviços simulados (mock) em `lib/services/`, que serão trocados pela API real sem alterar as telas.
-
-## Tecnologias
-
-**Front-end (este repositório)**
-- [Flutter](https://flutter.dev) e Dart
-- `provider` (estado)
-- `go_router` (navegação)
-- `http` (comunicação com a API)
-- `flutter_secure_storage` (armazenamento da sessão)
-
-**Back-end** (repositório separado)
-- Java (API REST)
-- PostgreSQL com PostGIS
+Projeto acadêmico (BRADEMO — Mobile, BRADWBK — Back-end, Projeto de TIC).
+Autores: Áquila Matheus de Oliveira (BP3054306) e Eduardo Schoof (BP3060357).
 
 ## Estrutura
+| Pasta | Conteúdo |
+|---|---|
+| `backend/` | API REST em Spring Boot 3.5 / Java 21 (JWT, JPA, WebSocket, Swagger, FCM) |
+| `app/` | Aplicativo Flutter/Dart (Provider, go_router, camada de rede, push, câmera/galeria, GPS) |
+| `banco/` | Scripts MySQL: `criar-usuario.sql` (cria o banco e o usuário) e `schema.sql` (tabelas, versão manual) |
+| `backend/postman/` | Coleção Postman (61 requisições com testes automáticos) |
+| `backend/docs/` | `API.md` (especificação), `MODELO.md` (modelo de dados) e `mysql/schema.sql` |
 
+## Funcionalidades
+Cadastro/login com perfis (doador, instituição, admin) · edição do próprio cadastro · CRUD de doações com até 5 fotos · categorias · busca por categoria e raio (distância por GPS) · solicitações/reserva (expira em 24 h) · estoque · chat em tempo real (WebSocket) · notificações push (FCM) · impacto do doador · aprovação de instituições pelo admin.
+
+## Modelo de dados
+`users`, `donors`, `institutions`, `food_categories`, `donations`, `donation_photos`, `stock_items`, `messages` e a tabela de junção `institution_category`.
+Relações: Doador 1:N Doação · Doação 1:N Fotos · Instituição 1:N Estoque · Instituição N:N Categoria.
+
+## Pré-requisitos
+- Java 21 e Maven (ou o Maven embutido da IDE)
+- Flutter SDK e Android Studio (emulador "Google Play" para testar push)
+- MySQL 8 **ou** Docker Desktop
+
+## Como rodar
+Ordem: **banco → API → app**.
+
+### 1. Banco de dados (escolha uma opção)
+
+**A) Docker — sobe banco e API juntos**
 ```
-lib/
-├── main.dart    # inicialização e injeção dos serviços
-├── router.dart  # rotas e controle de acesso por perfil
-├── models/      # modelos de dados
-│   └── enums/
-├── providers/   # estado da aplicação (sessão)
-├── screens/     # telas
-├── services/    # interfaces dos serviços e implementações mock
-└── utils/       # utilitários (validação de CPF e CNPJ)
-test/            # testes automatizados
-docs/            # contrato da API
+cd backend
+docker compose up --build
 ```
+MySQL em `localhost:3306` e API em http://localhost:8080. Pule para o passo 3.
 
-## Como executar
+**B) MySQL instalado**
+Abra o MySQL (Workbench ou terminal) como root e rode o script `banco/criar-usuario.sql` (`mysql -u root -p < banco/criar-usuario.sql`), que executa:
+```sql
+CREATE DATABASE IF NOT EXISTS doa CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE USER IF NOT EXISTS 'doa'@'%' IDENTIFIED BY 'doa';
+GRANT ALL PRIVILEGES ON doa.* TO 'doa'@'%';
+FLUSH PRIVILEGES;
+```
+As tabelas são criadas pela API na primeira execução. O script `banco/schema.sql` é a versão manual (use `DDL_AUTO=validate` se criar as tabelas à mão).
 
-Pré-requisito: [Flutter SDK](https://docs.flutter.dev/get-started/install) instalado.
+**C) Sem MySQL (teste rápido)**
+Não configure nada: a API usa H2 em memória, que zera a cada reinício.
 
-```bash
-git clone https://github.com/DevSchoof/DOA-interface
-cd doa-interface
+### 2. API (opções B e C)
+```
+cd backend
+mvn test                       # opcional
+```
+Com MySQL (PowerShell):
+```
+$env:SPRING_PROFILES_ACTIVE="mysql"
+$env:DB_HOST="localhost"; $env:DB_USER="doa"; $env:DB_PASSWORD="doa"
+$env:FCM_CREDENTIALS_PATH="C:\caminho\fora-do-repo\firebase-chave.json"   # só para push
+mvn spring-boot:run
+```
+Sem MySQL: apenas `mvn spring-boot:run`.
+
+- Swagger: http://localhost:8080/swagger-ui.html
+- Demo do WebSocket (chat): http://localhost:8080/ws-demo/index.html
+
+### 3. App (Flutter)
+```
+cd app
 flutter pub get
-flutter run -d chrome
+flutter analyze                # opcional
+flutter test                   # opcional
 ```
+- **Chrome:** `flutter run -d chrome` (usa http://localhost:8080)
+- **Emulador Android:** `flutter run -d emulator-5554 --dart-define=API_URL=http://10.0.2.2:8080`
+- **Celular físico (mesma rede Wi-Fi):** `flutter run --dart-define=API_URL=http://IP_DO_PC:8080` (libere a porta 8080 no firewall)
 
-Contas de teste (dados simulados):
+O caminho da pasta do projeto não pode ter acentos (limitação do Gradle no Windows).
 
-| E-mail | Senha | Perfil |
+**Localização (botão "Usar minha localização")**
+- Emulador Android: botão **⋯** → **Location** → informe latitude/longitude → **Set Location**, e só depois toque no botão.
+- Chrome: F12 → ⋮ → **More tools** → **Sensors** → **Location** → defina um ponto e permita a localização no aviso do navegador.
+
+**Push (FCM):** só funciona no Android, com `google-services.json` em `app/android/app/` e a chave do Firebase configurada na API (`FCM_CREDENTIALS_PATH`).
+
+## Contas de demonstração
+Criadas automaticamente na primeira execução da API.
+
+| Perfil | E-mail | Senha |
 |---|---|---|
-| admin@doa.com | admin123 | Administrador |
-| doador@doa.com | doador123 | Doador |
-| ong@doa.com | ong123 | Instituição |
+| Admin | admin@doa.com | admin123 |
+| Doador | doador@doa.com | doador123 |
+| Doador | mercado@doa.com | mercado123 |
+| Instituição (aprovada) | ong@doa.com | ong123 |
+| Instituição (pendente) | ong2@doa.com | ong123 |
 
-## Testes
+## Roteiro rápido de teste
+1. Entre como `doador@doa.com` → **Nova doação** (com foto da câmera/galeria).
+2. Entre como `ong@doa.com` → **Buscar doações** → **Solicitar** (com o app em segundo plano, deve chegar o push).
+3. Abra o chat da doação reservada nos dois perfis.
+4. A instituição confirma o recebimento → o item aparece em **Estoque**.
+5. Entre como `admin@doa.com` → **Instituições** (aprovar `ong2@doa.com`) e **Categorias**.
 
-```bash
-flutter analyze
-flutter test
-```
+## Testes da API (Postman)
+1. Importe `backend/postman/Doa-API.postman_collection.json`.
+2. Com a API no ar, rode a pasta **1. Autenticação** primeiro (ela salva os tokens) e depois as demais em ordem, ou use o **Runner** na coleção inteira.
+3. As requisições de foto usam `form-data`: selecione uma imagem no campo `file` antes de rodar.
 
-## Equipe
+## Documentação
+- API: `backend/docs/API.md` e Swagger em `/swagger-ui.html`
+- Modelo de dados: `backend/docs/MODELO.md`
+- Protótipo Figma: https://www.figma.com/design/l6tBYDLJyGlIXEHxyTjQeZ
 
-- Áquila Matheus de Oliveira
-- Eduardo Schoof
+## Problemas comuns
+- **"Não foi possível conectar ao servidor":** API fora do ar ou URL errada (o emulador usa `10.0.2.2`, não `localhost`).
+- **API não conecta no MySQL:** confira `DB_USER`/`DB_PASSWORD` e se o MySQL está na porta 3306.
+- **Não chega push:** use emulador com Google Play, aceite a permissão de notificação e confira `FCM_CREDENTIALS_PATH`.
+- **Doador sem latitude/longitude:** a localização não foi capturada antes de salvar o cadastro.
+
+## Segurança
+O `google-services.json` e a chave de conta de serviço do Firebase **não** são versionados: cada pessoa usa o seu. Em produção, troque `JWT_SECRET` e a senha do admin (`ADMIN_PASSWORD`).

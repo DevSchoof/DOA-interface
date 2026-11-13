@@ -1,0 +1,35 @@
+{
+  "name": "Dôa",
+  "short_name": "Dôa",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FFF8F0",
+  "theme_color": "#0F5C50",
+  "description": "Conectando quem tem alimento sobrando a quem precisa.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
