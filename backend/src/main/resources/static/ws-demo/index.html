@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dôa · Demonstração WebSocket</title>
+  <style>
+    :root{--bg:#f6faf6;--card:#fff;--ink:#1b1b1b;--muted:#5b665b;--accent:#2e7d32;--line:#d5e0d5;--warn:#b71c1c}
+    @media (prefers-color-scheme:dark){:root{--bg:#121712;--card:#1b231b;--ink:#e8efe8;--muted:#9bab9b;--accent:#81c784;--line:#2c382c;--warn:#ef9a9a}}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+    main{max-width:960px;margin:0 auto;padding:16px;display:grid;gap:16px}
+    h1{margin:8px 0 0;font-size:1.4rem}
+    p.sub{margin:0;color:var(--muted)}
+    section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+    h2{margin:0 0 12px;font-size:1rem}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    input,button,select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+    input{flex:1;min-width:140px}
+    button{background:var(--accent);color:#fff;border:0;cursor:pointer}
+    button.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    #status{font-weight:600}
+    #status.on{color:var(--accent)} #status.off{color:var(--warn)}
+    .grid{display:grid;gap:16px;grid-template-columns:1fr}
+    @media (min-width:800px){.grid{grid-template-columns:1fr 1fr}}
+    ul{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto;display:grid;gap:8px}
+    li{padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-size:.92rem}
+    li small{color:var(--muted);display:block}
+    li.me{border-color:var(--accent)}
+    li.err{border-color:var(--warn);color:var(--warn)}
+    .hint{color:var(--muted);font-size:.85rem;margin-top:8px}
+  </style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Dôa · WebSocket</h1>
+    <p class="sub">Abra esta página em duas janelas (uma como doador, outra como instituição) para ver o chat e as notificações em tempo real.</p>
+  </div>
+
+  <section>
+    <h2>1. Entrar e conectar</h2>
+    <div class="row">
+      <select id="preset" aria-label="Usuário de teste">
+        <option value="doador@doa.com|doador123">Doador (Maria)</option>
+        <option value="mercado@doa.com|mercado123">Doador (Supermercado)</option>
+        <option value="ong@doa.com|ong123">Instituição (Esperança)</option>
+        <option value="admin@doa.com|admin123">Administrador</option>
+      </select>
+      <button id="connect">Entrar e conectar</button>
+      <button id="disconnect" class="secondary" disabled>Desconectar</button>
+      <span id="status" class="off">desconectado</span>
+    </div>
+    <p class="hint" id="who"></p>
+  </section>
+
+  <div class="grid">
+    <section>
+      <h2>2. Chat da doação</h2>
+      <div class="row">
+        <select id="chats" aria-label="Doação do chat" style="flex:1;min-width:160px"></select>
+        <button id="load" class="secondary">Carregar histórico</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="msg" placeholder="Escreva uma mensagem" maxlength="1000">
+        <button id="send" disabled>Enviar</button>
+      </div>
+      <ul id="chat" aria-live="polite" style="margin-top:12px"></ul>
+      <p class="hint" id="chatHint">O chat só abre depois que uma instituição reserva a doação. O histórico vem do REST; as novas mensagens chegam pelo WebSocket.</p>
+    </section>
+
+    <section>
+      <h2>3. Notificações em tempo real</h2>
+      <ul id="events" aria-live="polite"></ul>
+      <p class="hint">Chegam quando surge doação nova, alguém reserva, cancela ou confirma recebimento, ou o admin aprova uma instituição.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+  let ws = null, token = null, me = null;
+  const $ = (id) => document.getElementById(id);
+
+  function log(listId, text, small, cls) {
+    const li = document.createElement('li');
+    if (cls) li.className = cls;
+    li.textContent = text;
+    if (small) { const s = document.createElement('small'); s.textContent = small; li.appendChild(s); }
+    const ul = $(listId);
+    ul.appendChild(li);
+    ul.scrollTop = ul.scrollHeight;
+  }
+
+  function setStatus(on) {
+    $('status').textContent = on ? 'conectado' : 'desconectado';
+    $('status').className = on ? 'on' : 'off';
+    $('connect').disabled = on;
+    $('disconnect').disabled = !on;
+    $('send').disabled = !on;
+  }
+
+  async function api(path, options = {}) {
+    const res = await fetch(path, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }
+    });
+    const body = res.status === 204 ? null : await res.json().catch(() => null);
+    if (!res.ok) throw new Error((body && body.message) || 'Erro ' + res.status);
+    return body;
+  }
+
+  async function loadChats() {
+    const sel = $('chats');
+    sel.innerHTML = '';
+    const path = me.role === 'INSTITUTION' ? '/api/donations/requested'
+               : me.role === 'DONOR' ? '/api/donations/mine' : null;
+    if (!path) { $('chatHint').textContent = 'O administrador não participa de chats. Entre como doador ou instituição.'; return; }
+    try {
+      const list = (await api(path)).filter(d => d.status === 'RESERVED' || d.status === 'DELIVERED');
+      list.forEach(d => {
+        const o = document.createElement('option');
+        o.value = d.id;
+        o.textContent = '#' + d.id + ' · ' + d.description + ' (' + (d.status === 'RESERVED' ? 'reservada' : 'entregue') + ')';
+        sel.appendChild(o);
+      });
+      if (list.length) {
+        $('chatHint').textContent = 'Escolha a doação e converse. Abra outra janela com o outro perfil para ver em tempo real.';
+        loadHistory();
+      } else {
+        $('chatHint').textContent = me.role === 'INSTITUTION'
+          ? 'Você ainda não reservou nenhuma doação. Reserve uma no Swagger (POST /api/donations/{id}/request) e reconecte.'
+          : 'Nenhuma doação sua foi reservada ainda. Peça para uma instituição reservar (POST /api/donations/{id}/request) e reconecte.';
+      }
+    } catch (e) { log('chat', e.message, null, 'err'); }
+  }
+
+  async function loadHistory() {
+    const id = $('chats').value;
+    $('chat').innerHTML = '';
+    if (!id || !token) return;
+    try { (await api('/api/donations/' + id + '/messages')).forEach(showChat); }
+    catch (e) { log('chat', e.message, null, 'err'); }
+  }
+
+  function showChat(m) {
+    const mine = me && m.senderUserId === me.id;
+    log('chat', m.content, m.senderName + ' · ' + new Date(m.sentAt).toLocaleTimeString(), mine ? 'me' : '');
+  }
+
+  $('connect').onclick = async () => {
+    const [email, password] = $('preset').value.split('|');
+    try {
+      const auth = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+      token = auth.token; me = auth.user;
+      $('who').textContent = 'Logado como ' + me.email + ' (' + me.role + ')';
+    } catch (e) { log('events', 'Falha no login: ' + e.message, null, 'err'); return; }
+
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(proto + '://' + location.host + '/ws?token=' + encodeURIComponent(token));
+    ws.onopen = () => { setStatus(true); loadChats(); };
+    ws.onclose = () => setStatus(false);
+    ws.onerror = () => log('events', 'Erro na conexão WebSocket.', null, 'err');
+    ws.onmessage = (ev) => {
+      const data = JSON.parse(ev.data);
+      if (data.type === 'chat') {
+        if (String(data.donationId) === $('chats').value) showChat(data);
+        else log('events', 'Nova mensagem na doação ' + data.donationId, data.senderName + ': ' + data.content);
+      }
+      else if (data.type === 'notification') {
+        log('events', data.title, data.body + (data.donationId ? ' (doação ' + data.donationId + ')' : ''));
+        if (data.event === 'DONATION_RESERVED' || data.event === 'DONATION_DELIVERED') loadChats();
+      }
+      else if (data.type === 'error') log('events', data.message, null, 'err');
+      else if (data.type === 'connected') log('events', 'Conexão estabelecida.');
+    };
+  };
+
+  $('disconnect').onclick = async () => {
+    if (ws) ws.close();
+    try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+    token = null; me = null; $('who').textContent = '';
+  };
+
+  $('load').onclick = loadHistory;
+  $('chats').onchange = loadHistory;
+
+  function send() {
+    const id = Number($('chats').value), content = $('msg').value.trim();
+    if (!ws || ws.readyState !== WebSocket.OPEN || !id || !content) return;
+    ws.send(JSON.stringify({ type: 'chat', donationId: id, content }));
+    $('msg').value = '';
+  }
+  $('send').onclick = send;
+  $('msg').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+</script>
+</body>
+</html>

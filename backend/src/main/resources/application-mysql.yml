@@ -1,0 +1,13 @@
+# Ativado com SPRING_PROFILES_ACTIVE=mysql. Tudo pode ser trocado por variável de ambiente.
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:doa}?createDatabaseIfNotExist=true&useSSL=${DB_SSL:false}&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo&characterEncoding=UTF-8
+    username: ${DB_USER:doa}
+    password: ${DB_PASSWORD:doa}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5   # planos gratuitos limitam conexões
+  jpa:
+    hibernate:
+      # update cria/ajusta as tabelas sozinho. Depois de estável, use "validate".
+      ddl-auto: ${DDL_AUTO:update}

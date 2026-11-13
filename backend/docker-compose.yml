@@ -1,0 +1,36 @@
+# Sobe o MySQL e a API:  docker compose up --build
+# Swagger: http://localhost:8080/swagger-ui.html   |   MySQL: localhost:3306 (doa/doa)
+services:
+  db:
+    image: mysql:8.4
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_DATABASE: doa
+      MYSQL_USER: doa
+      MYSQL_PASSWORD: doa
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - doa-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      DB_HOST: db
+      DB_NAME: doa
+      DB_USER: doa
+      DB_PASSWORD: doa
+      JWT_SECRET: troque-este-segredo-troque-este-segredo-0123456789
+    ports:
+      - "8080:8080"
+volumes:
+  doa-data:
