@@ -1,0 +1,42 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: doa-api
+  datasource:
+    # Sem variáveis: banco H2 em memória, em modo MySQL (bom para desenvolver e testar).
+    # Com MySQL: SPRING_PROFILES_ACTIVE=mysql (veja application-mysql.yml) ou
+    #   SPRING_DATASOURCE_URL=jdbc:mysql://host:3306/doa?...
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:doa;DB_CLOSE_DELAY=-1;MODE=MySQL}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+doa:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me-0123456789}
+    expiration-hours: 24
+  seed:
+    demo: ${SEED_DEMO:true}
+    admin-email: ${ADMIN_EMAIL:admin@doa.com}
+    admin-password: ${ADMIN_PASSWORD:admin123}
+  fcm:
+    credentials-json: ${FCM_CREDENTIALS_JSON:}
+    credentials-path: ${FCM_CREDENTIALS_PATH:}
+  reservation-hours: 24
+  default-radius-km: 50
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
